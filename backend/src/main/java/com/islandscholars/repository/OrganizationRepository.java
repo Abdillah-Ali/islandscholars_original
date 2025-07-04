@@ -1,10 +1,12 @@
 package com.islandscholars.repository;
 
-import com.islandscholars.entity.Organization;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import java.util.Optional;
-import java.util.List;
+
+import com.islandscholars.entity.Organization;
 
 @Repository
 public interface OrganizationRepository extends JpaRepository<Organization, Long> {
@@ -12,4 +14,5 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
     List<Organization> findByIndustry(String industry);
     List<Organization> findByLocation(String location);
     boolean existsByEmail(String email);
+    long countByName(String name);
 }

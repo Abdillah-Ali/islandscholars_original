@@ -47,8 +47,10 @@ const StudentDashboard = () => {
   });
 
   useEffect(() => {
-    fetchStudentData();
-  }, []);
+    if (user) {
+      fetchStudentData();
+    }
+  }, [user]);
 
   const fetchStudentData = async () => {
     try {

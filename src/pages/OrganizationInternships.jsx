@@ -20,8 +20,10 @@ const OrganizationInternships = () => {
   const [internships, setInternships] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
+  const [selectedInternship, setSelectedInternship] = useState(null);
   const [newInternship, setNewInternship] = useState({
     title: '',
     description: '',
@@ -99,6 +101,51 @@ const OrganizationInternships = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleUpdateInternship = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setMessage('');
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/internships/${selectedInternship.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...selectedInternship,
+          requirements: selectedInternship.requirements.split('\n').filter(r => r.trim()),
+          responsibilities: selectedInternship.responsibilities.split('\n').filter(r => r.trim())
+        }),
+      });
+
+      if (response.ok) {
+        setMessage('Internship updated successfully!');
+        setTimeout(() => {
+          setShowEditForm(false);
+          setSelectedInternship(null);
+          setMessage('');
+          fetchInternships();
+        }, 2000);
+      } else {
+        setMessage('Error updating internship. Please try again.');
+      }
+    } catch (error) {
+      setMessage('Connection error. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditClick = (internship) => {
+    setSelectedInternship({
+      ...internship,
+      requirements: Array.isArray(internship.requirements) ? internship.requirements.join('\n') : '',
+      responsibilities: Array.isArray(internship.responsibilities) ? internship.responsibilities.join('\n') : ''
+    });
+    setShowEditForm(true);
   };
 
   const handleDeleteInternship = async (id) => {
@@ -197,7 +244,10 @@ const OrganizationInternships = () => {
                       <button className="p-2 text-neutral-400 hover:text-blue-600 transition-colors">
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-neutral-400 hover:text-primary-red transition-colors">
+                      <button 
+                        onClick={() => handleEditClick(internship)}
+                        className="p-2 text-neutral-400 hover:text-primary-red transition-colors"
+                      >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button 
@@ -434,6 +484,201 @@ const OrganizationInternships = () => {
                   className="px-6 py-2 bg-gradient-to-r from-primary-red to-accent-pink text-primary-white rounded-md text-sm font-medium hover:from-accent-dark-red hover:to-primary-red transition-all duration-300 disabled:opacity-50"
                 >
                   {submitting ? 'Creating...' : 'Create Internship'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showEditForm && selectedInternship && (
+        <div className="fixed inset-0 bg-primary-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-primary-white rounded-xl p-6 w-full max-w-3xl max-h-screen overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-primary-black">Edit Internship</h2>
+              <button
+                onClick={() => setShowEditForm(false)}
+                className="text-neutral-400 hover:text-neutral-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {message && (
+              <div className={`mb-6 p-4 rounded-md ${
+                message.includes('successfully') 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'bg-red-100 text-red-700'
+              }`}>
+                {message}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateInternship} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-primary-black mb-2">
+                    Internship Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-primary-red focus:border-primary-red"
+                    value={selectedInternship.title}
+                    onChange={(e) => setSelectedInternship({...selectedInternship, title: e.target.value})}
+                    placeholder="Software Development Intern"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-primary-black mb-2">
+                    Field <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-primary-red focus:border-primary-red"
+                    value={selectedInternship.field}
+                    onChange={(e) => setSelectedInternship({...selectedInternship, field: e.target.value})}
+                    required
+                  >
+                    <option value="">Select Field</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Business">Business</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Education">Education</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Design">Design</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-primary-black mb-2">
+                  Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={4}
+                  required
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-primary-red focus:border-primary-red"
+                  value={selectedInternship.description}
+                  onChange={(e) => setSelectedInternship({...selectedInternship, description: e.target.value})}
+                  placeholder="Describe the internship opportunity, what the intern will learn and contribute..."
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-primary-black mb-2">
+                    Location <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-primary-red focus:border-primary-red"
+                    value={selectedInternship.location}
+                    onChange={(e) => setSelectedInternship({...selectedInternship, location: e.target.value})}
+                    placeholder="Dar es Salaam"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-primary-black mb-2">
+                    Duration <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-primary-red focus:border-primary-red"
+                    value={selectedInternship.duration}
+                    onChange={(e) => setSelectedInternship({...selectedInternship, duration: e.target.value})}
+                    required
+                  >
+                    {durationOptions.map(duration => (
+                      <option key={duration} value={duration}>{duration}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-primary-black mb-2">
+                    Available Spots <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-primary-red focus:border-primary-red"
+                    value={selectedInternship.spotsAvailable}
+                    onChange={(e) => setSelectedInternship({...selectedInternship, spotsAvailable: parseInt(e.target.value)})}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-primary-black mb-2">Type</label>
+                  <select
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-primary-red focus:border-primary-red"
+                    value={selectedInternship.type}
+                    onChange={(e) => setSelectedInternship({...selectedInternship, type: e.target.value})}
+                  >
+                    <option value="Full-time">Full-time</option>
+                    <option value="Part-time">Part-time</option>
+                    <option value="Remote">Remote</option>
+                    <option value="Hybrid">Hybrid</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-primary-black mb-2">Start Date</label>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-primary-red focus:border-primary-red"
+                    value={selectedInternship.startDate ? new Date(selectedInternship.startDate).toISOString().split('T')[0] : ''}
+                    onChange={(e) => setSelectedInternship({...selectedInternship, startDate: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-primary-black mb-2">
+                  Requirements (one per line)
+                </label>
+                <textarea
+                  rows={4}
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-primary-red focus:border-primary-red"
+                  value={selectedInternship.requirements}
+                  onChange={(e) => setSelectedInternship({...selectedInternship, requirements: e.target.value})}
+                  placeholder="Currently enrolled in university&#10;Strong communication skills&#10;Basic knowledge of relevant field"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-primary-black mb-2">
+                  Responsibilities (one per line)
+                </label>
+                <textarea
+                  rows={4}
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-primary-red focus:border-primary-red"
+                  value={selectedInternship.responsibilities}
+                  onChange={(e) => setSelectedInternship({...selectedInternship, responsibilities: e.target.value})}
+                  placeholder="Assist with daily operations&#10;Participate in team meetings&#10;Complete assigned projects"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-4 pt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowEditForm(false)}
+                  className="px-6 py-2 border border-neutral-300 rounded-md text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-6 py-2 bg-gradient-to-r from-primary-red to-accent-pink text-primary-white rounded-md text-sm font-medium hover:from-accent-dark-red hover:to-primary-red transition-all duration-300 disabled:opacity-50"
+                >
+                  {submitting ? 'Updating...' : 'Update Internship'}
                 </button>
               </div>
             </form>

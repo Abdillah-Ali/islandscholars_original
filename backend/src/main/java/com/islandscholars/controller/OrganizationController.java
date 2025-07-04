@@ -35,6 +35,16 @@ public class OrganizationController {
         log.info("Found {} organizations in the database.", organizations.size());
         return ResponseEntity.ok(organizations);
     }
+
+    @GetMapping("/count")
+    public long getOrganizationsCount() {
+        return organizationRepository.count();
+    }
+
+    @GetMapping("/count/{name}")
+    public long getOrganizationsCountByName(@PathVariable String name) {
+        return organizationRepository.countByName(name);
+    }
     
     @GetMapping("/{id}")
     public ResponseEntity<Organization> getOrganizationById(@PathVariable Long id) {
